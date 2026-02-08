@@ -1,47 +1,46 @@
 import os
 import asyncio
 from aiogram import Bot, Dispatcher, types
-from threading import Thread
+from aiogram.filters import Command
 from flask import Flask
+from threading import Thread
 
-# --- БЛОК ДЛЯ RENDER (WEB SERVER) ---
-# Это заставит Render думать, что мы - сайт, и он не будет убивать процесс
-app = Flask('')
+# --- WEB SERVER FOR RENDER ---
+app = Flask(__name__)
 
 @app.route('/')
-def home():
-    return "I am alive!"
+def index():
+    return "Rendo Bot is Alive!"
 
-def run():
-    # Render сам подставит нужный порт в переменную PORT
+def run_web():
+    # Render передает порт в переменные окружения
     port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host="0.0.0.0", port=port)
 
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
-# -------------------------------------
-
-# ТВОЙ ТОКЕН (лучше добавить его в Settings -> Environment Variables на Render)
-TOKEN = os.environ.get("BOT_TOKEN", "ТВОЙ_ТОКЕН_ТУТ")
-
+# --- BOT LOGIC ---
+TOKEN = "8347791766:AAEO0E7gfjPSqK6Vsy-KqZQbnGX02UsIVSc"
 bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
-@dp.message_handler(commands=['start'])
-async def start_command(message: types.Message):
-    await message.reply("Привет! Я теперь живу на Render и больше не засыпаю! 🚀")
+@dp.message(Command("start"))
+async def start_handler(message: types.Message):
+    await message.answer("Привет! Теперь я работаю на Render без перебоев! 🚀")
 
-@dp.message_handler()
-async def echo(message: types.Message):
-    # Здесь твоя логика ИИ или просто эхо
+@dp.message()
+async def echo_handler(message: types.Message):
     await message.answer(f"Ты написал: {message.text}")
 
+# --- MAIN RUNNER ---
 async def main():
-    print("Запуск сервера...")
-    keep_alive()  # Запускаем "обманку" для Render
-    print("Бот запущен и слушает Telegram!")
-    await dp.start_polling()
+    # Запускаем веб-сервер в фоне, чтобы Render не ругался на порты
+    Thread(target=run_web, daemon=True).start()
+    
+    print("Бот запускается...")
+    # Запускаем опрос Telegram
+    await dp.start_polling(bot)
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Бот выключен")
