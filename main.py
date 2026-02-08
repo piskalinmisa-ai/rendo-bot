@@ -3,8 +3,8 @@ import telebot
 import openai
 
 # Получаем токены из переменных окружения
-TOKEN = os.getenv("8347791766:AAFnoULSxWMv0cyJ4luq7LMMWp0EmZxK5zI")
-OPENAI_KEY = os.getenv("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")
+TOKEN = os.getenv("BOT_TOKEN")
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 if not TOKEN or not OPENAI_KEY:
     raise RuntimeError("❌ Задайте BOT_TOKEN и OPENAI_API_KEY в .env")
