@@ -1,3 +1,2 @@
 aiogram==3.17.0
-g4f
-curl_cffi
+aiohttp
