@@ -1,59 +1,47 @@
-import asyncio, base64, requests, logging
+import os
+import asyncio
 from aiogram import Bot, Dispatcher, types
-from aiogram.filters import Command
+from threading import Thread
+from flask import Flask
 
-logging.basicConfig(level=logging.INFO)
-TG_TOKEN = "8347791766:AAEO0E7gfjPSqK6Vsy-KqZQbnGX02UsIVSc"
-KEYS = ["AIzaSyBKebrtxU3FklDbOQrQyfHCn20lyJevaGo", "AIzaSyDTsNv542p1b6-nfjWVRSYY4IgvypOqeEI"]
+# --- БЛОК ДЛЯ RENDER (WEB SERVER) ---
+# Это заставит Render думать, что мы - сайт, и он не будет убивать процесс
+app = Flask('')
 
-bot = Bot(token=TG_TOKEN)
-dp = Dispatcher()
-current_key_index = 0
+@app.route('/')
+def home():
+    return "I am alive!"
 
-def get_api_key(): return KEYS[current_key_index]
-def switch_key():
-    global current_key_index
-    current_key_index = (current_key_index + 1) % len(KEYS)
+def run():
+    # Render сам подставит нужный порт в переменную PORT
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
-def get_best_model(api_key):
-    try:
-        res = requests.get(f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}", timeout=10).json()
-        models = [m['name'] for m in res.get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
-        for m in models:
-            if "flash" in m.lower(): return m
-        return models[0] if models else None
-    except: return None
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+# -------------------------------------
 
-@dp.message(Command("start"))
-async def cmd_start(message: types.Message):
-    await message.answer("🚀 Rendo запущен 24/7 с телефона!")
+# ТВОЙ ТОКЕН (лучше добавить его в Settings -> Environment Variables на Render)
+TOKEN = os.environ.get("BOT_TOKEN", "ТВОЙ_ТОКЕН_ТУТ")
 
-@dp.message()
-async def handle_message(message: types.Message):
-    await bot.send_chat_action(message.chat.id, "typing")
-    for _ in range(len(KEYS)):
-        api_key = get_api_key()
-        model = get_best_model(api_key)
-        if not model:
-            switch_key(); continue
-        url = f"https://generativelanguage.googleapis.com/v1beta/{model}:generateContent?key={api_key}"
-        parts = [{"text": message.text or message.caption or "Опиши"}]
-        if message.photo:
-            file = await bot.get_file(message.photo[-1].file_id)
-            photo = await bot.download_file(file.file_path)
-            parts.append({"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(photo.getvalue()).decode('utf-8')}})
-        try:
-            res = requests.post(url, json={"contents": [{"parts": parts}]}, timeout=30)
-            if res.status_code == 200:
-                await message.answer(res.json()['candidates'][0]['content']['parts'][0]['text'])
-                return
-            switch_key()
-        except: switch_key()
-    await message.answer("😴 Лимит. Подожди минуту.")
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
+
+@dp.message_handler(commands=['start'])
+async def start_command(message: types.Message):
+    await message.reply("Привет! Я теперь живу на Render и больше не засыпаю! 🚀")
+
+@dp.message_handler()
+async def echo(message: types.Message):
+    # Здесь твоя логика ИИ или просто эхо
+    await message.answer(f"Ты написал: {message.text}")
 
 async def main():
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    print("Запуск сервера...")
+    keep_alive()  # Запускаем "обманку" для Render
+    print("Бот запущен и слушает Telegram!")
+    await dp.start_polling()
 
 if __name__ == '__main__':
     asyncio.run(main())
