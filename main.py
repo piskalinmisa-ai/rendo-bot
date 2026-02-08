@@ -1,8 +1,8 @@
 import telebot
 import requests
 
-TELEGRAM_TOKEN = "ВСТАВЬ_НОВЫЙ_TELEGRAM_TOKEN"
-HF_TOKEN = "ВСТАВЬ_НОВЫЙ_HUGGINGFACE_TOKEN"
+TELEGRAM_TOKEN = "8347791766:AAEO0E7gfjPSqK6Vsy-KqZQbnGX02UsIVSc"
+HF_TOKEN = "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"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
