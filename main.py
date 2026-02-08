@@ -1,20 +1,20 @@
 import telebot
 import os
 
-TOKEN = os.getenv("8347791766:AAEO0E7gfjPSqK6Vsy-KqZQbnGX02UsIVSc")  # токен берём из переменной окружения
+TOKEN = os.environ.get("BOT_TOKEN")
 
 if not TOKEN:
-    raise ValueError("❌ Не задан BOT_TOKEN")
+    raise RuntimeError("BOT_TOKEN не задан")
 
 bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "✅ Бот работает!")
+    bot.send_message(message.chat.id, "✅ Бот запущен и работает!")
 
 @bot.message_handler(content_types=['text'])
 def echo(message):
-    bot.send_message(message.chat.id, f"Ты написал: {message.text}")
+    bot.send_message(message.chat.id, message.text)
 
-print("🤖 Бот запущен")
-bot.infinity_polling()
+print("🤖 Bot started")
+bot.infinity_polling(skip_pending=True)
