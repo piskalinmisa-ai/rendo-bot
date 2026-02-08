@@ -1,63 +1,35 @@
 import os
 import asyncio
+import google.generativeai as genai
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from flask import Flask
-from threading import Thread
-import google.generativeai as genai
 
-# --- ВЕБ-СЕРВЕР ДЛЯ RENDER ---
-app = Flask(__name__)
-@app.route('/')
-def index(): return "Rendo AI is Online!"
+# Берем ключи из настроек Railway (Variables)
+TOKEN = os.environ.get("BOT_TOKEN", "8347791766:AAEO0E7gfjPSqK6Vsy-KqZQbnGX02UsIVSc")
+GEMINI_KEY = os.environ.get("GEMINI_KEY", "AIzaSyAU2L4mcJZ3c8IydGVHQOuYxu_niCS7uTQ")
 
-def run_web():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
-
-# --- НАСТРОЙКА GEMINI ---
-# Я вставил твой первый ключ сюда:
-GEMINI_KEY = "AIzaSyAU2L4mcJZ3c8IydGVHQOuYxu_niCS7uTQ"
 genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# --- ЛОГИКА ТЕЛЕГРАМ-БОТА ---
-TOKEN = "8347791766:AAEO0E7gfjPSqK6Vsy-KqZQbnGX02UsIVSc"
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 @dp.message(Command("start"))
-async def start_handler(message: types.Message):
-    await message.answer("Привет! Теперь я твой полноценный ИИ-помощник. Спрашивай о чём угодно! 🧠✨")
+async def start(message: types.Message):
+    await message.answer("Привет! Я Rendo на новом хостинге Railway. Теперь я должен работать идеально! 🚀")
 
 @dp.message()
-async def ai_handler(message: types.Message):
-    # Показываем статус "печатает"
+async def ai_msg(message: types.Message):
     await bot.send_chat_action(message.chat.id, action="typing")
-    
     try:
-        # Запрос к нейросети
         response = model.generate_content(message.text)
-        
-        # Если Gemini прислал пустой ответ или ошибку
-        if response.text:
-            await message.answer(response.text)
-        else:
-            await message.answer("Я задумался и не смог подобрать слов. Попробуй еще раз!")
-            
+        await message.answer(response.text)
     except Exception as e:
-        print(f"Ошибка Gemini: {e}")
-        await message.answer("Произошла ошибка при обработке запроса. Возможно, стоит проверить лимиты ключа.")
+        await message.answer("Что-то пошло не так. Проверь ключи!")
 
 async def main():
-    # Запуск сервера "обманки" для Render
-    Thread(target=run_web, daemon=True).start()
-    
-    print("Rendo AI успешно запущен!")
+    print("Бот запущен на Railway!")
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        print(f"Ошибка при запуске: {e}")
+    asyncio.run(main())
