@@ -1,7 +1,7 @@
 import telebot
 import os
 
-TOKEN = os.getenv("BOT_TOKEN")  # токен берём из переменной окружения
+TOKEN = os.getenv("8347791766:AAEO0E7gfjPSqK6Vsy-KqZQbnGX02UsIVSc")  # токен берём из переменной окружения
 
 if not TOKEN:
     raise ValueError("❌ Не задан BOT_TOKEN")
