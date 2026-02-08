@@ -1,48 +1,20 @@
 import telebot
-import requests
+import os
 
-TELEGRAM_TOKEN = "8347791766:AAEO0E7gfjPSqK6Vsy-KqZQbnGX02UsIVSc"
-HF_TOKEN = "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"
+TOKEN = os.getenv("BOT_TOKEN")  # токен берём из переменной окружения
 
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
+if not TOKEN:
+    raise ValueError("❌ Не задан BOT_TOKEN")
 
-# память диалогов
-user_memory = {}
+bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(
-        message.chat.id,
-        "Привет 👋 Я ИИ-бот 🤖\nПиши что угодно — я отвечу!"
-    )
+    bot.send_message(message.chat.id, "✅ Бот работает!")
 
-@bot.message_handler(commands=['help'])
-def help_cmd(message):
-    bot.send_message(
-        message.chat.id,
-        "/start — начать\n/help — помощь\n\nПросто пиши текст 👇"
-    )
+@bot.message_handler(content_types=['text'])
+def echo(message):
+    bot.send_message(message.chat.id, f"Ты написал: {message.text}")
 
-@bot.message_handler(func=lambda message: True)
-def ai_chat(message):
-    user_id = message.chat.id
-    text = message.text
-
-    history = user_memory.get(user_id, "")
-    prompt = history + "\nПользователь: " + text + "\nБот:"
-
-    response = requests.post(
-        "https://api-inference.huggingface.co/models/google/flan-t5-base",
-        headers={"Authorization": f"Bearer {HF_TOKEN}"},
-        json={"inputs": prompt}
-    )
-
-    try:
-        answer = response.json()[0]["generated_text"]
-    except:
-        answer = "Я немного завис 😅 попробуй ещё раз"
-
-    user_memory[user_id] = prompt + answer
-    bot.send_message(user_id, answer)
-
-bot.polling()
+print("🤖 Бот запущен")
+bot.infinity_polling()
